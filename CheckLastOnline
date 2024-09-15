@@ -1,0 +1,51 @@
+import time
+
+from pyrogram import Client
+from pyrogram import enums
+from pyrogram.handlers import UserStatusHandler
+
+# Ваш API_ID и API_HASH
+API_ID = API_ID
+API_HASH = "API_HASH"
+
+prey_username = "@prey_name"
+# Создание клиента Pyrogram
+app = Client("check_online", api_id=API_ID, api_hash=API_HASH)
+
+
+# Функция для обработки статуса онлайн пользователей
+async def on_user_online(client, user_id, status):
+    if status == "online":
+        print(f"Пользователь с ID {user_id} онлайн")
+    elif status == "offline":
+        print(f"Пользователь с ID {user_id} не в сети")
+
+is_online = False
+is_offline = False
+while (True):
+    with app:
+        user = app.get_users(prey_username)
+        status = user.__getattribute__("status")
+        if is_online == False and is_offline == False:
+            # print(user.__getattribute__("status"))
+            if str(status) == "UserStatus.ONLINE":
+                print(f"Пользователь {user.__getattribute__("first_name")} онлайн")
+                is_online = True
+            elif str(status) == "UserStatus.OFFLINE" or str(status) == "UserStatus.RECENTLY":
+                print(f"Пользователь  {user.__getattribute__("first_name")} не в сети")
+                is_offline = True
+        elif is_online == True and is_offline == False:
+            # print(user.__getattribute__("status"))
+            if str(status) == "UserStatus.OFFLINE" or str(status) == "UserStatus.RECENTLY":
+                print(f"Пользователь  {user.__getattribute__("first_name")} был в сети в {time.time()}")
+                is_offline = True
+                is_online = False
+        elif is_online == False and is_offline == True:
+            if str(status) == "UserStatus.ONLINE":
+                print(f"Пользователь {user.__getattribute__("first_name")} онлайн")
+                is_online = True
+                is_offline = False
+        time.sleep(3)
+
+# Запуск клиента Pyrogram
+app.run()
