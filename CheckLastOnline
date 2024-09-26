@@ -13,39 +13,35 @@ prey_username = "@prey_name"
 app = Client("check_online", api_id=API_ID, api_hash=API_HASH)
 
 
-# Функция для обработки статуса онлайн пользователей
-async def on_user_online(client, user_id, status):
-    if status == "online":
-        print(f"Пользователь с ID {user_id} онлайн")
-    elif status == "offline":
-        print(f"Пользователь с ID {user_id} не в сети")
+# Асинхронная функция для проверки статуса пользователя
+async def check_user_status():
+    is_online = False
+    is_offline = False
+    while True:
+        async with app:
+            user = await app.get_users(prey_username)
+            status = user.status
+            first_name = user.first_name
 
-is_online = False
-is_offline = False
-while (True):
-    with app:
-        user = app.get_users(prey_username)
-        status = user.__getattribute__("status")
-        if is_online == False and is_offline == False:
-            # print(user.__getattribute__("status"))
-            if str(status) == "UserStatus.ONLINE":
-                print(f"Пользователь {user.__getattribute__("first_name")} онлайн")
-                is_online = True
-            elif str(status) == "UserStatus.OFFLINE" or str(status) == "UserStatus.RECENTLY":
-                print(f"Пользователь  {user.__getattribute__("first_name")} не в сети")
-                is_offline = True
-        elif is_online == True and is_offline == False:
-            # print(user.__getattribute__("status"))
-            if str(status) == "UserStatus.OFFLINE" or str(status) == "UserStatus.RECENTLY":
-                print(f"Пользователь  {user.__getattribute__("first_name")} был в сети в {time.time()}")
-                is_offline = True
-                is_online = False
-        elif is_online == False and is_offline == True:
-            if str(status) == "UserStatus.ONLINE":
-                print(f"Пользователь {user.__getattribute__("first_name")} онлайн")
-                is_online = True
-                is_offline = False
+            if is_online is False and is_offline is False:
+                if status == UserStatus.ONLINE:
+                    print(f"Пользователь {first_name} онлайн")
+                    is_online = True
+                elif status in [UserStatus.OFFLINE, UserStatus.RECENTLY]:
+                    print(f"Пользователь {first_name} не в сети")
+                    is_offline = True
+            elif is_online is True and is_offline is False:
+                if status in [UserStatus.OFFLINE, UserStatus.RECENTLY]:
+                    print(f"Пользователь {first_name} был в сети в {time.strftime('%Y-%m-%d %H:%M:%S')}")
+                    is_offline = True
+                    is_online = False
+            elif is_online is False and is_offline is True:
+                if status == UserStatus.ONLINE:
+                    print(f"Пользователь {first_name} снова онлайн")
+                    is_online = True
+                    is_offline = False
+
         time.sleep(3)
 
 # Запуск клиента Pyrogram
-app.run()
+app.run(check_user_status())
