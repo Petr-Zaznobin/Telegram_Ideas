@@ -14,34 +14,55 @@ app = Client("check_online", api_id=API_ID, api_hash=API_HASH)
 
 
 # Асинхронная функция для проверки статуса пользователя
+# Функция для получения статуса пользователя
+def get_status(user_status):
+    if user_status == enums.UserStatus.ONLINE:
+        return "онлайн"
+    elif user_status == enums.UserStatus.OFFLINE:
+        return "не в сети"
+    elif user_status == enums.UserStatus.RECENTLY:
+        return "недавно был в сети"
+    elif user_status == enums.UserStatus.LAST_WEEK:
+        return "был в сети на прошлой неделе"
+    elif user_status == enums.UserStatus.LAST_MONTH:
+        return "был в сети в прошлом месяце"
+    else:
+        return "давно не заходил"
+
+
+# Основной цикл для проверки статуса пользователя
 async def check_user_status():
     is_online = False
     is_offline = False
     while True:
         async with app:
-            user = await app.get_users(prey_username)
-            status = user.status
-            first_name = user.first_name
+            user = await app.get_users(prey_username)  # Асинхронное получение информации о пользователе
+            status = user.status  # Статус пользователя
 
-            if is_online is False and is_offline is False:
-                if status == UserStatus.ONLINE:
-                    print(f"Пользователь {first_name} онлайн")
+            if not is_online and not is_offline:
+                if status == enums.UserStatus.ONLINE:
+                    print(f"Пользователь {user.first_name} {get_status(status)}")
                     is_online = True
-                elif status in [UserStatus.OFFLINE, UserStatus.RECENTLY]:
-                    print(f"Пользователь {first_name} не в сети")
+                elif status in [enums.UserStatus.OFFLINE, enums.UserStatus.RECENTLY]:
+                    print(f"Пользователь {user.first_name} {get_status(status)}")
                     is_offline = True
-            elif is_online is True and is_offline is False:
-                if status in [UserStatus.OFFLINE, UserStatus.RECENTLY]:
-                    print(f"Пользователь {first_name} был в сети в {time.strftime('%Y-%m-%d %H:%M:%S')}")
-                    is_offline = True
+
+            elif is_online and not is_offline:
+                if status in [enums.UserStatus.OFFLINE, enums.UserStatus.RECENTLY]:
+                    print(
+                        f"Пользователь {user.first_name} был в сети в {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
                     is_online = False
-            elif is_online is False and is_offline is True:
-                if status == UserStatus.ONLINE:
-                    print(f"Пользователь {first_name} снова онлайн")
+                    is_offline = True
+
+            elif not is_online and is_offline:
+                if status == enums.UserStatus.ONLINE:
+                    print(f"Пользователь {user.first_name} снова {get_status(status)}")
                     is_online = True
                     is_offline = False
 
         time.sleep(3)
 
-# Запуск клиента Pyrogram
-app.run(check_user_status())
+
+# Запуск клиента и функции проверки статуса
+if __name__ == "__main__":
+    app.run(check_user_status())
